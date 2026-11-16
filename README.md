@@ -134,3 +134,4 @@ vraies migrations dans PGlite (Postgres en WebAssembly).
   limitera à des métriques robustes.
 - La fatigue et l'intensité seront des estimations à partir du mouvement, pas
   des mesures physiologiques.
+# cocoach
