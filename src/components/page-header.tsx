@@ -17,7 +17,7 @@ export function PageHeader({ title, subtitle, back, actions }: Props) {
       {back && (
         <Link
           href={back.href}
-          className="self-start text-sm text-muted-foreground underline-offset-4 hover:underline"
+          className="-my-2 flex min-h-11 items-center self-start text-sm text-muted-foreground underline-offset-4 hover:underline"
         >
           ← {back.label}
         </Link>

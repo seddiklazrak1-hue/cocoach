@@ -147,6 +147,8 @@ export const fr = {
         "Chaque changement est daté et ne peut plus être modifié ensuite.",
       autoResetNote:
         "Date de naissance modifiée : athlète mineur, consentement parental requis.",
+      outOfSync:
+        "Le journal et le statut ne concordent pas : la base n'est pas à jour. Exécute la migration 20261116000003_consent_journal.sql dans Supabase, puis enregistre de nouveau le consentement.",
     },
     groups: {
       title: "Groupes",
@@ -200,10 +202,14 @@ export const fr = {
       level: "Niveau",
       weight: "Poids (kg)",
       height: "Taille (cm)",
+      weightShort: "Poids",
+      heightShort: "Taille",
+      weightValue: (kg: number) => `${kg.toLocaleString("fr-FR")} kg`,
+      heightValue: (cm: number) => `${cm.toLocaleString("fr-FR")} cm`,
       birthDate: "Date de naissance",
       optional: "Facultatif",
       birthDateHint:
-        "Facultatif. Sert uniquement à savoir si un consentement parental est requis.",
+        "La date de naissance sert uniquement à savoir si un consentement parental est requis.",
       groups: "Groupes",
       groupsNone: "Aucun groupe créé pour l'instant.",
       noGroup: "Sans groupe",
@@ -222,6 +228,11 @@ export const fr = {
     },
     confirm: {
       label: (name: string) => `Pour confirmer, tape « ${name} »`,
+    },
+    notFound: {
+      title: "Page introuvable",
+      body: "Cette page n'existe pas, ou l'élément a été supprimé.",
+      back: "Retour au tableau de bord",
     },
     errors: {
       generic: "L'enregistrement a échoué. Réessaie.",

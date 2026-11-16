@@ -41,6 +41,10 @@ export default async function AthletePage({
   );
   const athleteGroups = groups.filter((group) => groupIds.has(group.id));
   const minor = isMinor(athlete.birth_date);
+  // Garde-fou d'installation : si la migration du journal n'a pas été exécutée,
+  // une entrée est ajoutée sans que le statut suive. On le signale clairement.
+  const outOfSync =
+    consents.length > 0 && consents[0].status !== athlete.consent_status;
 
   const facts: Array<[label: string, value: string]> = [
     [
@@ -51,8 +55,12 @@ export default async function AthletePage({
     ],
     [t.level, fr.roster.levels[athlete.level]],
   ];
-  if (athlete.weight_kg !== null) facts.push([t.weight, `${athlete.weight_kg}`]);
-  if (athlete.height_cm !== null) facts.push([t.height, `${athlete.height_cm}`]);
+  if (athlete.weight_kg !== null) {
+    facts.push([t.weightShort, t.weightValue(athlete.weight_kg)]);
+  }
+  if (athlete.height_cm !== null) {
+    facts.push([t.heightShort, t.heightValue(athlete.height_cm)]);
+  }
   if (athlete.birth_date !== null) {
     facts.push([
       t.birthDate,
@@ -127,6 +135,15 @@ export default async function AthletePage({
             {tc.explain}
           </p>
         </div>
+
+        {outOfSync && (
+          <p
+            role="alert"
+            className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+          >
+            {tc.outOfSync}
+          </p>
+        )}
 
         <details className="rounded-xl border p-4">
           <summary className="cursor-pointer font-medium">{tc.change}</summary>

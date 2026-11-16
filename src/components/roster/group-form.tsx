@@ -113,6 +113,7 @@ function ScheduleEditor({
             <label className="col-span-2 flex flex-col gap-1 text-xs text-muted-foreground sm:col-span-1">
               {t.slotDay}
               <Select
+                className="text-foreground"
                 value={String(slot.day)}
                 onChange={(event) =>
                   update(index, { day: Number(event.target.value) })
@@ -129,7 +130,7 @@ function ScheduleEditor({
               {t.slotStart}
               <Input
                 type="time"
-                className="h-11"
+                className="h-11 text-foreground"
                 value={slot.start}
                 onChange={(event) => update(index, { start: event.target.value })}
               />
@@ -138,7 +139,7 @@ function ScheduleEditor({
               {t.slotEnd}
               <Input
                 type="time"
-                className="h-11"
+                className="h-11 text-foreground"
                 value={slot.end}
                 onChange={(event) => update(index, { end: event.target.value })}
               />

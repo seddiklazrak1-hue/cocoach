@@ -84,7 +84,7 @@ export default async function GroupPage({ params }: PageProps<"/groups/[id]">) {
               >
                 <Link
                   href={`/athletes/${athlete.id}`}
-                  className="flex min-h-11 min-w-0 flex-1 items-center gap-3 font-medium underline-offset-4 hover:underline"
+                  className="flex min-h-11 min-w-48 flex-1 items-center gap-3 font-medium underline-offset-4 hover:underline"
                 >
                   <span className="break-words">{athlete.display_name}</span>
                   <ConsentBadge allowed={athlete.analysis_allowed} />
