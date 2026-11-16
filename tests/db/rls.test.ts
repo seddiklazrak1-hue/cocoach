@@ -69,6 +69,9 @@ beforeAll(async () => {
   await db.exec(
     read("../../supabase/migrations/20261116000001_initial_schema.sql"),
   );
+  await db.exec(
+    read("../../supabase/migrations/20261116000003_consent_journal.sql"),
+  );
   coachA = await createCoach("coach.a@example.test", "Coach A");
   coachB = await createCoach("coach.b@example.test", "Coach B");
 });
@@ -184,28 +187,94 @@ describe("isolation entre coachs (RLS)", () => {
 });
 
 describe("consentement et droit à l'effacement", () => {
+  const consentOf = (athlete: string) =>
+    asCoach(coachA, async (tx) => {
+      const { rows } = await tx.query<{
+        consent_status: string;
+        analysis_allowed: boolean;
+      }>(
+        "select consent_status, analysis_allowed from athletes where id = $1",
+        [athlete],
+      );
+      return rows[0];
+    });
+
+  const recordConsent = (coachId: string, athlete: string, status: string) =>
+    asCoach(coachId, (tx) =>
+      tx.query("insert into consents (athlete_id, status) values ($1, $2)", [
+        athlete,
+        status,
+      ]),
+    );
+
   it("bloque l'analyse par défaut tant qu'aucun consentement n'est enregistré", async () => {
     const athlete = await insertAthlete(coachA, "Noa");
-    const read = () =>
-      asCoach(coachA, (tx) =>
-        tx.query<{ consent_status: string; analysis_allowed: boolean }>(
-          "select consent_status, analysis_allowed from athletes where id = $1",
-          [athlete],
-        ),
-      );
-
-    expect((await read()).rows[0]).toEqual({
+    expect(await consentOf(athlete)).toEqual({
       consent_status: "missing",
       analysis_allowed: false,
     });
+  });
 
-    await asCoach(coachA, (tx) =>
-      tx.query(
-        "update athletes set consent_status = 'minor_parental_confirmed' where id = $1",
-        [athlete],
+  it("une entrée au journal met à jour le statut, un retrait rebloque l'analyse", async () => {
+    const athlete = await insertAthlete(coachA, "Mehdi");
+
+    await recordConsent(coachA, athlete, "minor_parental_confirmed");
+    expect(await consentOf(athlete)).toEqual({
+      consent_status: "minor_parental_confirmed",
+      analysis_allowed: true,
+    });
+
+    await recordConsent(coachA, athlete, "withdrawn");
+    expect(await consentOf(athlete)).toEqual({
+      consent_status: "withdrawn",
+      analysis_allowed: false,
+    });
+  });
+
+  it("le statut ne peut pas être modifié sans passer par le journal", async () => {
+    const athlete = await insertAthlete(coachA, "Sofiane");
+    await expect(
+      asCoach(coachA, (tx) =>
+        tx.query(
+          "update athletes set consent_status = 'adult_confirmed' where id = $1",
+          [athlete],
+        ),
+      ),
+    ).rejects.toThrow(/permission denied/);
+
+    await expect(
+      asCoach(coachA, (tx) =>
+        tx.query(
+          "insert into athletes (display_name, consent_status) values ('Triche', 'adult_confirmed')",
+        ),
+      ),
+    ).rejects.toThrow(/permission denied/);
+  });
+
+  it("refuse un consentement « adulte » pour un athlète mineur", async () => {
+    const { rows } = await asCoach(coachA, (tx) =>
+      tx.query<{ id: string }>(
+        `insert into athletes (display_name, birth_date)
+         values ('Adam', (current_date - interval '15 years')::date) returning id`,
       ),
     );
-    expect((await read()).rows[0].analysis_allowed).toBe(true);
+    const athlete = rows[0].id;
+
+    await expect(recordConsent(coachA, athlete, "adult_confirmed")).rejects.toThrow(
+      /consentement parental/,
+    );
+    expect((await consentOf(athlete)).analysis_allowed).toBe(false);
+
+    await recordConsent(coachA, athlete, "minor_parental_confirmed");
+    expect((await consentOf(athlete)).analysis_allowed).toBe(true);
+  });
+
+  it("le coach B ne peut pas enregistrer un consentement pour un athlète du coach A", async () => {
+    const athlete = await insertAthlete(coachA, "Rayan");
+    await expect(
+      recordConsent(coachB, athlete, "adult_confirmed"),
+    ).rejects.toThrow(/foreign key/);
+    expect((await consentOf(athlete)).analysis_allowed).toBe(false);
   });
 
   it("le journal de consentement ne peut pas être réécrit", async () => {

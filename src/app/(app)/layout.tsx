@@ -1,3 +1,4 @@
+import { AppNav } from "@/components/app-nav";
 import { Brand, MedicalDisclaimer } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth/actions";
@@ -14,7 +15,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <>
-      <header className="border-b">
+      <header>
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <Brand href={HOME_PATH} />
           <div className="flex items-center gap-3">
@@ -29,6 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
       </header>
+      <AppNav />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
         {children}
       </main>

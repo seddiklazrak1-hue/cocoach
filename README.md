@@ -8,7 +8,7 @@ navigateur**, puis produit des retours individuels (technique, physique,
 prévention) et une vue d'ensemble du groupe. **Aucune vidéo n'est stockée** :
 seules des séries de points articulaires quittent l'appareil.
 
-**État du projet : phase 1 sur 8 terminée** (fondations). Voir la
+**État du projet : phase 2 sur 8 terminée** (groupes, athlètes, consentements). Voir la
 [feuille de route](#feuille-de-route).
 
 > Combat Coach IA n'est pas un dispositif médical. Les analyses sont des
@@ -20,7 +20,15 @@ seules des séries de points articulaires quittent l'appareil.
 - Inscription, connexion et déconnexion du coach (e-mail + mot de passe).
 - Schéma complet de la base avec Row Level Security : un coach ne voit que ses
   données.
-- Tableau de bord minimal, protégé par la session.
+- **Groupes** : création, modification, suppression, créneaux hebdomadaires,
+  rattachement des athlètes.
+- **Athlètes** : fiche (prénom ou pseudo, discipline, niveau, mesures
+  facultatives), groupes, modification.
+- **Consentement** : journal daté et non modifiable ; aucune analyse possible
+  sans consentement enregistré ; consentement parental imposé pour un mineur.
+- **Droit à l'effacement** : un bouton supprime la fiche et toutes les données
+  liées, après confirmation par saisie du nom.
+- Tableau de bord avec compteurs et rappel des athlètes non analysables.
 - CI : lint, types, tests et build à chaque push.
 
 ## Stack
@@ -49,6 +57,7 @@ Prérequis : Node 24 et un compte [Supabase](https://supabase.com) gratuit.
    l'ordre, le contenu de :
    - `supabase/migrations/20261116000001_initial_schema.sql`
    - `supabase/migrations/20261116000002_pose_storage.sql`
+   - `supabase/migrations/20261116000003_consent_journal.sql`
 
 4. **Renseigner les clés** : copier `.env.example` vers `.env.local`, puis y
    coller l'URL du projet et la clé publique (*publishable key*). Ne jamais y
@@ -86,10 +95,16 @@ src/
     page.tsx              page d'accueil publique
     (auth)/               connexion, inscription
     (app)/                pages réservées au coach connecté
+      dashboard/          tableau de bord
+      groups/             liste, création, fiche et modification d'un groupe
+      athletes/           liste, création, fiche et modification d'un athlète
     auth/callback/        retour du lien de confirmation par e-mail
   components/             composants d'interface (ui/ = shadcn)
+    form/                 champs de formulaire partagés
+    roster/               formulaires groupe, athlète, consentement, effacement
   lib/
     auth/                 schémas Zod, Server Actions, coach courant
+    roster/               groupes et athlètes : types, validation, lectures, actions
     supabase/             clients navigateur / serveur / proxy
     i18n/fr.ts            tous les textes de l'interface
     routes.ts             règles d'accès par chemin
@@ -110,14 +125,19 @@ La protection ne repose pas sur le code de l'app mais sur Postgres :
    l'effacement).
 4. Un athlète sans consentement enregistré a `analysis_allowed = false` : c'est
    le comportement par défaut, ce qui couvre le cas des mineurs.
+5. Le statut de consentement ne s'écrit pas directement : il faut ajouter une
+   ligne au journal `consents`, et un trigger reporte le statut sur l'athlète.
+   Le journal lui-même est en ajout seul (ni modification ni suppression).
+6. Un athlète dont la date de naissance indique moins de 18 ans ne peut pas
+   recevoir un consentement « adulte » : la base le refuse.
 
-Ces quatre points sont vérifiés par `tests/db/rls.test.ts`, qui exécute les
+Ces six points sont vérifiés par `tests/db/rls.test.ts`, qui exécute les
 vraies migrations dans PGlite (Postgres en WebAssembly).
 
 ## Feuille de route
 
 - [x] **1. Fondations** : Next.js, Supabase, auth, schéma, RLS, CI
-- [ ] 2. Groupes et athlètes avec consentements
+- [x] **2. Groupes et athlètes** avec consentements et effacement
 - [ ] 3. Capture caméra, pose en direct, assignation manuelle
 - [ ] 4. Pipeline de métriques déterministe
 - [ ] 5. Recommandations via l'API Claude
