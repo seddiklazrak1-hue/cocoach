@@ -56,8 +56,10 @@ export const fr = {
       alreadyRegistered: "Un compte existe déjà avec cet e-mail.",
       weakPassword: "Mot de passe trop faible : 8 caractères minimum.",
       rateLimited: "Trop de tentatives. Réessaie dans quelques minutes.",
+      // Le lien ne crée la session que dans le navigateur où l'inscription a
+      // été faite. Ailleurs, l'adresse est quand même confirmée.
       callbackFailed:
-        "Le lien de confirmation est invalide ou expiré. Reconnecte-toi pour en recevoir un nouveau.",
+        "Lien ouvert dans un autre navigateur, ou expiré. Si ton adresse est déjà confirmée, connecte-toi simplement ci-dessous.",
       generic: "Une erreur est survenue. Réessaie.",
       emailInvalid: "Adresse e-mail invalide.",
       passwordTooShort: "8 caractères minimum.",

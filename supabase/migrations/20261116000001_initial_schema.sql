@@ -41,6 +41,13 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Rattrapage : si un compte a été créé AVANT cette migration, il n'a pas de
+-- profil. On le crée ici pour que rien ne dépende de l'ordre des opérations.
+insert into public.coaches (id, display_name)
+select id, left(coalesce(raw_user_meta_data ->> 'display_name', ''), 60)
+from auth.users
+on conflict (id) do nothing;
+
 -- ----------------------------------------------------------------------------
 -- groups : groupes d'entraînement du coach
 -- ----------------------------------------------------------------------------
