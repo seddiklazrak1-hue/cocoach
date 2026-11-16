@@ -72,6 +72,9 @@ beforeAll(async () => {
   await db.exec(
     read("../../supabase/migrations/20261116000003_consent_journal.sql"),
   );
+  await db.exec(
+    read("../../supabase/migrations/20261117000004_pose_clips.sql"),
+  );
   coachA = await createCoach("coach.a@example.test", "Coach A");
   coachB = await createCoach("coach.b@example.test", "Coach B");
 });
@@ -292,6 +295,39 @@ describe("consentement et droit à l'effacement", () => {
         ]),
       ),
     ).rejects.toThrow(/permission denied/);
+  });
+
+  it("refuse d'enregistrer la pose d'un athlète sans consentement", async () => {
+    const group = await insertGroup(coachA, "Boxe jeudi");
+    const blocked = await insertAthlete(coachA, "Bilal");
+    const allowed = await insertAthlete(coachA, "Chloé");
+    await recordConsent(coachA, allowed, "adult_confirmed");
+    const { rows } = await asCoach(coachA, (tx) =>
+      tx.query<{ id: string }>(
+        "insert into sessions (group_id, kind) values ($1, 'drill') returning id",
+        [group],
+      ),
+    );
+    const insertPose = (athlete: string, clip: string) =>
+      asCoach(coachA, (tx) =>
+        tx.query(
+          `insert into pose_series (session_id, athlete_id, clip_id, storage_path, sample_rate_hz, frame_count, duration_s)
+           values ($1, $2, $3, 'a/b/c.bin', 10, 100, 10)`,
+          [rows[0].id, athlete, clip],
+        ),
+      );
+    const clip = "5f0c2f4e-6a51-4c0f-9a0e-2b7d0c1e9f11";
+
+    await expect(insertPose(blocked, clip)).rejects.toThrow(/Consentement manquant/);
+    await insertPose(allowed, clip);
+    // Un seul fichier par athlète et par séquence.
+    await expect(insertPose(allowed, clip)).rejects.toThrow(/unique|duplicate/);
+
+    // Après retrait du consentement, plus aucun nouvel enregistrement.
+    await recordConsent(coachA, allowed, "withdrawn");
+    await expect(
+      insertPose(allowed, "9d3b8c7a-1e2f-4a5b-8c6d-7e8f9a0b1c2d"),
+    ).rejects.toThrow(/Consentement manquant/);
   });
 
   it("supprimer un athlète efface toutes ses données liées", async () => {
