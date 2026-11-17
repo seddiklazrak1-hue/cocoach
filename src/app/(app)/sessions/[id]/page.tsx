@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ClipViewer } from "@/components/capture/clip-viewer";
+import { AnalyzeButton } from "@/components/metrics/analyze-button";
+import { MetricsReport } from "@/components/metrics/metrics-report";
 import { PageHeader } from "@/components/page-header";
 import { ConsentBadge } from "@/components/roster/consent-badge";
 import { DangerZone } from "@/components/roster/danger-zone";
@@ -10,6 +12,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { fr } from "@/lib/i18n/fr";
 import { formatDate, formatDateTime } from "@/lib/roster/labels";
 import { getGroup, listAthletes, listMemberships } from "@/lib/roster/queries";
+import { getSessionAnalysis } from "@/lib/metrics/queries";
 import { deleteClip, deleteSession } from "@/lib/sessions/actions";
 import { formatDuration } from "@/lib/sessions/domain";
 import { getSession, listClips } from "@/lib/sessions/queries";
@@ -23,11 +26,12 @@ export default async function SessionPage({ params }: PageProps<"/sessions/[id]"
   const session = await getSession(id);
   if (!session) notFound();
 
-  const [group, athletes, memberships, clips] = await Promise.all([
+  const [group, athletes, memberships, clips, results] = await Promise.all([
     getGroup(session.group_id),
     listAthletes(),
     listMemberships(),
     listClips(session.id),
+    getSessionAnalysis(session.id),
   ]);
   const memberIds = new Set(
     memberships.filter((m) => m.group_id === session.group_id).map((m) => m.athlete_id),
@@ -141,6 +145,28 @@ export default async function SessionPage({ params }: PageProps<"/sessions/[id]"
           </ol>
         )}
       </section>
+
+      {clips.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <div>
+            <h2 className="font-heading text-lg font-semibold">{fr.metrics.title}</h2>
+            <p className="text-sm text-muted-foreground">{fr.metrics.subtitle}</p>
+          </div>
+          <AnalyzeButton sessionId={session.id} analyzed={results.analyses.length > 0} />
+          {results.analyses.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{fr.metrics.notAnalyzed}</p>
+          ) : (
+            results.analyses.map((analysis) => (
+              <MetricsReport
+                key={analysis.athlete_id}
+                name={nameOf.get(analysis.athlete_id) ?? "?"}
+                analysis={analysis}
+                metrics={results.metrics.filter((m) => m.athlete_id === analysis.athlete_id)}
+              />
+            ))
+          )}
+        </section>
+      )}
 
       <DangerZone
         action={deleteSession.bind(null, session.id)}

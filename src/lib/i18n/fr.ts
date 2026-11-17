@@ -145,7 +145,7 @@ export const fr = {
       journal: "Journal",
       journalEmpty: "Aucune entrée pour l'instant.",
       journalHint:
-        "Chaque changement est daté et ne peut plus être modifié ensuite.",
+        "Chaque changement est daté et ne peut plus être modifié ensuite. Retirer le consentement efface aussi les résultats d'analyse déjà calculés.",
       autoResetNote:
         "Date de naissance modifiée : athlète mineur, consentement parental requis.",
       outOfSync:
@@ -403,6 +403,169 @@ export const fr = {
         `${n === 1 ? "1 série de pose envoyée" : `${n} séries de pose envoyées`} (${size}). Aucune image vidéo n'a quitté l'appareil.`,
       another: "Filmer une autre séquence",
       back: "Retour à la séance",
+    },
+  },
+  metrics: {
+    title: "Analyse des mouvements",
+    subtitle:
+      "Mesures calculées à partir des squelettes : ce sont des estimations, accompagnées de leur fiabilité.",
+    analyze: "Analyser la séance",
+    reanalyze: "Relancer l'analyse",
+    analyzing: "Analyse en cours…",
+    noClips: "Filme au moins une séquence pour lancer l'analyse.",
+    notAnalyzed: "Séance pas encore analysée.",
+    done: (analyzed: number, skipped: number) =>
+      `${analyzed <= 1 ? `${analyzed} athlète analysé` : `${analyzed} athlètes analysés`}${
+        skipped > 0 ? ` · ${skipped} sans consentement valide, non analysé${skipped > 1 ? "s" : ""}` : ""
+      }.`,
+    errorGeneric: "L'analyse a échoué. Réessaie.",
+    errorDownload: "Impossible de lire les données de pose de cette séance.",
+    presence: (duration: string, quality: number) =>
+      `Présent et visible ${duration} · points visibles à ${quality} % en moyenne`,
+    categories: {
+      technique: "Technique",
+      physical: "Physique",
+      injury_prevention: "Prévention des blessures",
+      discipline: "Spécifique à la discipline",
+    },
+    confidence: { high: "fiable", medium: "à confirmer", low: "peu fiable" },
+    confidenceHint:
+      "Fiabilité = visibilité des points × nombre d'images × part du temps exploitable. Les mesures peu fiables ne serviront pas aux recommandations.",
+    watch: "à surveiller",
+    watchHint:
+      "Signal à vérifier avec un professionnel (kiné, médecin du sport), jamais un diagnostic.",
+    howMeasured: "Comment c'est mesuré",
+    sides: (left: string, right: string) => `gauche ${left} · droite ${right}`,
+    missing: (labels: string) => `Non mesurable sur cette séance (pas assez d'images fiables) : ${labels}.`,
+    notes: {
+      short_presence:
+        "Moins de 30 secondes exploitables : les mesures sont indicatives.",
+      low_quality:
+        "Points souvent peu visibles (éclairage, distance ou angle) : fiabilité réduite.",
+      ground_heavy:
+        "Beaucoup de travail au sol : les mesures « debout » portent sur moins d'images.",
+      bjj_limited:
+        "Jiu-jitsu : le travail au sol est mal vu par une seule caméra. Seules les mesures robustes sont gardées.",
+      depth_estimated:
+        "Certaines mesures utilisent la profondeur estimée par le modèle (plus bruitée) : leur fiabilité est réduite d'office.",
+    },
+    items: {
+      stance_width: {
+        label: "Largeur d'appuis",
+        description:
+          "Distance entre les chevilles, rapportée à la largeur d'épaules. Médiane sur les moments debout.",
+      },
+      guard_height: {
+        label: "Hauteur de garde",
+        description:
+          "Hauteur des poignets par rapport aux épaules, en longueurs de tronc : 0 = à hauteur d'épaules, négatif = mains plus basses.",
+      },
+      knee_flexion: {
+        label: "Flexion des genoux",
+        description:
+          "Angle hanche-genou-cheville (180° = jambe tendue). Médiane sur les moments debout.",
+      },
+      hip_flexion: {
+        label: "Flexion des hanches",
+        description: "Angle épaule-hanche-genou (180° = corps droit). Médiane sur les moments debout.",
+      },
+      trunk_lean: {
+        label: "Inclinaison du tronc",
+        description: "Angle du tronc (hanches → épaules) avec la verticale. Médiane.",
+      },
+      balance_offset: {
+        label: "Centrage sur les appuis",
+        description:
+          "Écart horizontal entre un centre de masse approché et le milieu des pieds, en longueurs de tronc. Plus c'est bas, mieux l'athlète est centré.",
+      },
+      intensity: {
+        label: "Intensité",
+        description:
+          "Vitesse moyenne des poignets, coudes, genoux et chevilles par rapport aux hanches. Estimation à partir du mouvement, pas une mesure physiologique.",
+      },
+      explosiveness: {
+        label: "Explosivité",
+        description: "Pics de vitesse des poignets et des chevilles (95e centile).",
+      },
+      rhythm_variability: {
+        label: "Variabilité du rythme",
+        description:
+          "Variation de l'intensité d'une seconde à l'autre. Élevée = alternance d'efforts et de pauses.",
+      },
+      intensity_drop: {
+        label: "Baisse d'intensité",
+        description:
+          "Écart d'intensité entre le premier et le dernier tiers de la séance. Positif = baisse : indicateur possible de fatigue.",
+      },
+      guard_drop_over_time: {
+        label: "Garde qui baisse",
+        description:
+          "Différence de hauteur de garde entre le début et la fin de la séance. Positif = mains plus basses à la fin.",
+      },
+      knee_range: {
+        label: "Amplitude des genoux",
+        description: "Écart entre flexion et extension les plus marquées (5e à 95e centile).",
+      },
+      hip_range: {
+        label: "Amplitude des hanches",
+        description: "Écart entre flexion et extension les plus marquées (5e à 95e centile).",
+      },
+      shoulder_range: {
+        label: "Amplitude des épaules",
+        description: "Écart d'élévation des bras (angle hanche-épaule-coude, 5e à 95e centile).",
+      },
+      knee_valgus: {
+        label: "Genou qui rentre (valgus)",
+        description:
+          "Quand le genou est fléchi, écart du genou vers l'intérieur par rapport à l'axe hanche-cheville, en % de la longueur de jambe (90e centile du côté le plus marqué).",
+      },
+      trunk_flexion: {
+        label: "Flexion du tronc prononcée",
+        description:
+          "Inclinaison du tronc dans les moments les plus penchés (90e centile). Le dos arrondi lui-même n'est pas mesurable sans points sur la colonne.",
+      },
+      elbow_lockout: {
+        label: "Coude verrouillé en frappe",
+        description:
+          "Part des mouvements de bras rapides qui finissent coude tendu au-delà de 172°.",
+      },
+      asymmetry: {
+        label: "Asymétrie gauche/droite",
+        description:
+          "Écart moyen d'amplitude entre côté gauche et côté droit (genoux, hanches, coudes, épaules).",
+      },
+      stance_level: {
+        label: "Niveau de garde",
+        description:
+          "Hauteur des hanches au-dessus du sol, en longueurs de jambe : plus c'est bas, plus la garde est basse.",
+      },
+      level_changes: {
+        label: "Changements de niveau",
+        description: "Nombre de descentes nettes des hanches par minute (entrées de jambes, sprawls).",
+      },
+      guard_drops: {
+        label: "Garde baissée",
+        description:
+          "Nombre de fois par minute où les mains restent loin du visage plus d'une demi-seconde.",
+      },
+      guard_recovery: {
+        label: "Temps de retour en garde",
+        description: "Durée moyenne pendant laquelle la garde reste baissée.",
+      },
+      strike_rate: {
+        label: "Frappes par minute",
+        description:
+          "Mouvements de poignet au-delà de 3 m/s, comptés une fois chacun. Estimation : un geste rapide n'est pas toujours une frappe.",
+      },
+      trunk_rotation: {
+        label: "Rotation du tronc",
+        description:
+          "Rotation des épaules par rapport aux hanches, vue de dessus, dans les moments les plus marqués (90e centile).",
+      },
+      ground_share: {
+        label: "Temps au sol",
+        description: "Part du temps où l'athlète est au sol ou en position très basse.",
+      },
     },
   },
 } as const;

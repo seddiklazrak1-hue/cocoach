@@ -8,7 +8,7 @@ navigateur**, puis produit des retours individuels (technique, physique,
 prévention) et une vue d'ensemble du groupe. **Aucune vidéo n'est stockée** :
 seules des séries de points articulaires quittent l'appareil.
 
-**État du projet : phase 3 sur 8 terminée** (capture, squelettes en direct, assignation). Voir la
+**État du projet : phase 4 sur 8 terminée** (calcul des métriques). Voir la
 [feuille de route](#feuille-de-route).
 
 > Combat Coach IA n'est pas un dispositif médical. Les analyses sont des
@@ -38,6 +38,10 @@ seules des séries de points articulaires quittent l'appareil.
   découpe et échange de deux athlètes confondus.
 - **Envoi** : une série de points articulaires compressée par athlète
   (environ 20 Ko pour 20 secondes), jamais de vidéo.
+- **Analyse** : 25 métriques déterministes (technique, physique, prévention,
+  modules par discipline), chacune avec sa fiabilité de 0 à 1 et une
+  explication en français. Seuls les athlètes avec un consentement valide au
+  moment de l'analyse sont analysés.
 - Tableau de bord avec compteurs et rappel des athlètes non analysables.
 - CI : lint, types, tests et build à chaque push.
 
@@ -70,6 +74,7 @@ Prérequis : Node 24 et un compte [Supabase](https://supabase.com) gratuit.
    - `supabase/migrations/20261116000002_pose_storage.sql`
    - `supabase/migrations/20261116000003_consent_journal.sql`
    - `supabase/migrations/20261117000004_pose_clips.sql`
+   - `supabase/migrations/20261117000005_athlete_analysis.sql`
 
 4. **Renseigner les clés** : copier `.env.example` vers `.env.local`, puis y
    coller l'URL du projet et la clé publique (*publishable key*). Ne jamais y
@@ -94,6 +99,7 @@ d'installation sur la page de connexion.
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm test` | Tests unitaires et tests RLS |
+| `npm run test:coverage` | Tests + couverture (90 % minimum exigé sur les métriques et la pose) |
 | `npm run typecheck` | Vérification des types |
 | `npm run lint` | ESLint |
 | `npm run check` | Lint + types + tests (à lancer avant un commit) |
@@ -117,12 +123,15 @@ src/
     roster/               formulaires groupe, athlète, consentement, effacement
     sessions/             formulaire et badge de séance
     capture/              moteur MediaPipe, boucle en direct, replay, relecture
+    metrics/              bouton d'analyse et rapport par athlète
   lib/
     auth/                 schémas Zod, Server Actions, coach courant
     roster/               groupes et athlètes : types, validation, lectures, actions
     sessions/             séances et séquences : types, validation, lectures, actions
     pose/                 cœur de pose, sans React : suivi, identités, enregistrement,
-                          corrections, format de fichier, poses synthétiques
+                          corrections, format de fichier, squelette paramétrable
+    metrics/              calcul des métriques (TypeScript pur, déterministe),
+                          modules par discipline, affichage
     security/csp.ts       serveurs que la page a le droit de contacter
     supabase/             clients navigateur / serveur / proxy
     i18n/fr.ts            tous les textes de l'interface
@@ -191,6 +200,46 @@ caméra ou fichier ──► MediaPipe (25 points par personne, 30-60 images/s)
                   Supabase Storage  <coach>/<séance>/<séquence>/<athlète>.bin
 ```
 
+## Métriques
+
+Calcul en TypeScript pur (`src/lib/metrics`), côté serveur, sur les séries de
+pose uniquement. **Aucun modèle de langage n'intervient dans les calculs.**
+
+1. `features.ts` : pour chaque image, angles, distances et vitesses. Une
+   valeur n'est calculée que si tous ses points ont une visibilité d'au moins
+   0,5 ; une image dont la visibilité moyenne est sous 0,4 est ignorée.
+2. `analyze.ts` : agrégation (médiane, centiles, amplitude, fréquence
+   d'événements) et fiabilité.
+3. `disciplines.ts` : métriques et seuils par sport. C'est le seul fichier à
+   modifier pour ajuster une discipline.
+
+| Catégorie | Métriques |
+|---|---|
+| Technique | largeur d'appuis, hauteur de garde, flexion des genoux et des hanches, inclinaison du tronc, centrage sur les appuis |
+| Physique | intensité (m/s), explosivité, variabilité du rythme, baisse d'intensité et garde qui baisse (indicateurs de fatigue), amplitudes genoux / hanches / épaules |
+| Prévention | genou qui rentre (valgus), flexion du tronc prononcée, coude verrouillé en frappe, asymétrie gauche/droite |
+| Lutte, judo, MMA | niveau de garde, changements de niveau par minute, temps au sol |
+| Boxe, kickboxing, MMA | frappes par minute, garde baissée, temps de retour en garde, rotation du tronc |
+| JJB | temps au sol, avec avertissement sur la fiabilité |
+
+**Fiabilité** (0 à 1) = visibilité moyenne des points utilisés × assez
+d'images (5 s, ou 30 s pour les amplitudes et l'asymétrie) × (0,5 + 0,5 × part
+des images exploitables), × 0,85 si la métrique dépend de la profondeur
+estimée. L'interface affiche « fiable » à partir de 0,7, « à confirmer » de 0,4
+à 0,7, « peu fiable » en dessous, et toujours « ≈ » devant une valeur.
+
+**Signaux « à surveiller »** : seulement si la valeur dépasse un seuil de
+vigilance ET que la fiabilité est d'au moins 0,5. Ce sont des signaux à
+vérifier avec un professionnel, jamais des diagnostics.
+
+**Tests** : un squelette 3D paramétrable (`src/lib/pose/skeleton.ts`) produit
+des poses à angles connus ; les métriques les retrouvent à ±2°, que l'athlète
+soit face à la caméra, de trois quarts ou de profil.
+
+**Non mesuré, volontairement** : le dos arrondi (aucun point sur la colonne :
+on mesure la flexion du tronc à la place) et l'hyperextension de l'épaule (pas
+de repère fiable en 2D).
+
 On garde 25 des 33 points de MediaPipe : les yeux et la bouche sont retirés,
 le nez et les oreilles suffisent pour situer la tête. Le format de fichier est
 décrit en tête de `src/lib/pose/codec.ts`.
@@ -200,7 +249,7 @@ décrit en tête de `src/lib/pose/codec.ts`.
 - [x] **1. Fondations** : Next.js, Supabase, auth, schéma, RLS, CI
 - [x] **2. Groupes et athlètes** avec consentements et effacement
 - [x] **3. Capture caméra**, pose en direct, assignation manuelle, replay
-- [ ] 4. Pipeline de métriques déterministe
+- [x] **4. Pipeline de métriques** déterministe, testé avec des fixtures à angle connu
 - [ ] 5. Recommandations via l'API Claude
 - [ ] 6. Tableaux de bord athlète et groupe
 - [ ] 7. Mode démo et finitions
@@ -221,5 +270,14 @@ décrit en tête de `src/lib/pose/codec.ts`.
   relecture permet de corriger avant l'envoi.
 - Une séquence dure 10 minutes au plus. Pour une séance entière, enchaîner
   plusieurs séquences.
+- Les seuils de vigilance et les métriques sont des heuristiques raisonnables,
+  pas des normes validées scientifiquement. Comparer un athlète à lui-même dans
+  le temps a plus de sens que la valeur absolue.
+- Les coordonnées 3D sont une estimation de MediaPipe à partir d'une seule
+  caméra : la profondeur est bruitée.
+- Avec un cadrage en buste (jambes hors champ), les métriques des jambes ne
+  sont pas calculées et l'app l'indique.
+- Retirer un consentement efface les résultats d'analyse ; les séries de
+  mouvement restent jusqu'à « Effacer toutes les données ».
 - Performances mesurées pour l'instant sur ordinateur (Chrome, 44 à 60 images
   analysées par seconde). Pas encore mesurées sur téléphone.

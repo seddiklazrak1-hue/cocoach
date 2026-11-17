@@ -75,6 +75,9 @@ beforeAll(async () => {
   await db.exec(
     read("../../supabase/migrations/20261117000004_pose_clips.sql"),
   );
+  await db.exec(
+    read("../../supabase/migrations/20261117000005_athlete_analysis.sql"),
+  );
   coachA = await createCoach("coach.a@example.test", "Coach A");
   coachB = await createCoach("coach.b@example.test", "Coach B");
 });

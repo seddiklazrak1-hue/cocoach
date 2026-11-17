@@ -326,6 +326,17 @@ export async function recordConsent(
     .insert({ athlete_id: athleteId, ...parsed.data });
   if (error) return { error: e.generic };
 
+  // Consentement retiré (ou plus valable) : on arrête tout traitement, donc les
+  // résultats d'analyse déjà calculés sont effacés tout de suite. Les séries de
+  // mouvement restent jusqu'à ce que le coach utilise « Effacer toutes les données ».
+  if (parsed.data.status === "withdrawn" || parsed.data.status === "missing") {
+    await supabase.from("metrics").delete().eq("athlete_id", athleteId);
+    await supabase
+      .from("session_athletes")
+      .update({ analysis: null, analyzed_at: null })
+      .eq("athlete_id", athleteId);
+  }
+
   refreshApp();
   return {};
 }
