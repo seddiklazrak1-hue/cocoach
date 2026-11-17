@@ -568,4 +568,37 @@ export const fr = {
       },
     },
   },
+  insights: {
+    title: "Recommandations",
+    generate: "Rédiger les recommandations",
+    regenerate: "Rédiger à nouveau",
+    generating: "Rédaction en cours…",
+    needsAnalysis: "Lance d'abord l'analyse pour pouvoir rédiger les recommandations.",
+    done: (n: number) =>
+      n <= 1 ? `${n} recommandation rédigée.` : `${n} recommandations rédigées.`,
+    errorGeneric: "La rédaction a échoué. Réessaie dans un instant.",
+    errorRefusal: "Le modèle a refusé de rédiger ces retours.",
+    errorInvalid:
+      "Les retours proposés ne respectaient pas les règles (métriques citées, ton, vocabulaire médical) : rien n'a été enregistré.",
+    sourceClaude: (model: string) => `Rédigé par l'IA (${model}) à partir des métriques, sans vidéo ni prénom`,
+    sourceRules: "Mode démonstration : texte produit par des règles simples, sans IA (aucune clé API configurée)",
+    sourceInsufficient: "Pas assez de mesures fiables pour rédiger des recommandations",
+    mockNotice: "Mode démonstration sans IA : retours génériques produits par des règles.",
+    insufficient:
+      "Pas assez de mesures fiables sur cette séance pour rédiger des recommandations. Filme une séquence plus longue, avec le corps entier dans le cadre.",
+    reviewHint: "À relire par le coach avant de transmettre à l'athlète.",
+    summary: "En bref",
+    strengths: "Points forts",
+    improvements: "Axes d'amélioration",
+    priority: (n: number) => `Priorité ${n}`,
+    exercises: "Exercices proposés",
+    exerciseKinds: { technique: "Technique", physique: "Physique", mobilite: "Mobilité" },
+    alerts: "Signaux à vérifier",
+    alertsHint:
+      "Ce ne sont pas des diagnostics : ces points sont à vérifier avec un professionnel de santé (kiné, médecin du sport).",
+    weekPlan: "Plan pour la semaine prochaine",
+    reliability: "Fiabilité de ces retours",
+    basedOn: "S'appuie sur",
+    toConfirm: "à confirmer",
+  },
 } as const;

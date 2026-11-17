@@ -23,10 +23,16 @@ export type StoredAnalysis = {
   };
 };
 
-/** Métriques et résumés d'analyse d'une séance (RLS : seulement les données du coach). */
+export type StoredInsightRow = {
+  athlete_id: string;
+  content: import("@/lib/insights/schema").StoredInsight;
+  created_at: string;
+};
+
+/** Métriques, résumés d'analyse et recommandations d'une séance (RLS : seulement les données du coach). */
 export async function getSessionAnalysis(sessionId: string) {
   const supabase = await createClient();
-  const [metrics, analyses] = await Promise.all([
+  const [metrics, analyses, insights] = await Promise.all([
     supabase
       .from("metrics")
       .select("athlete_id, key, category, value, unit, confidence, details")
@@ -36,11 +42,14 @@ export async function getSessionAnalysis(sessionId: string) {
       .select("athlete_id, analyzed_at, analysis")
       .eq("session_id", sessionId)
       .not("analysis", "is", null),
+    supabase.from("insights").select("athlete_id, content, created_at").eq("session_id", sessionId),
   ]);
   if (metrics.error) throw new Error(metrics.error.message);
   if (analyses.error) throw new Error(analyses.error.message);
+  if (insights.error) throw new Error(insights.error.message);
   return {
     metrics: metrics.data as StoredMetric[],
     analyses: analyses.data as StoredAnalysis[],
+    insights: insights.data as StoredInsightRow[],
   };
 }

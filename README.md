@@ -8,7 +8,7 @@ navigateur**, puis produit des retours individuels (technique, physique,
 prévention) et une vue d'ensemble du groupe. **Aucune vidéo n'est stockée** :
 seules des séries de points articulaires quittent l'appareil.
 
-**État du projet : phase 4 sur 8 terminée** (calcul des métriques). Voir la
+**État du projet : phase 5 sur 8 terminée** (recommandations rédigées par l'IA). Voir la
 [feuille de route](#feuille-de-route).
 
 > Combat Coach IA n'est pas un dispositif médical. Les analyses sont des
@@ -42,6 +42,11 @@ seules des séries de points articulaires quittent l'appareil.
   modules par discipline), chacune avec sa fiabilité de 0 à 1 et une
   explication en français. Seuls les athlètes avec un consentement valide au
   moment de l'analyse sont analysés.
+- **Recommandations** : pour chaque athlète, 3 points forts, 3 axes
+  d'amélioration priorisés, des exercices dosés, des signaux à vérifier et un
+  plan pour la semaine, rédigés par Claude à partir des seules métriques.
+  Chaque conseil affiche les métriques qui le justifient. Sans clé API : mode
+  démonstration par règles simples, signalé comme tel.
 - Tableau de bord avec compteurs et rappel des athlètes non analysables.
 - CI : lint, types, tests et build à chaque push.
 
@@ -54,6 +59,7 @@ seules des séries de points articulaires quittent l'appareil.
 | Base, auth, stockage | Supabase (Postgres, région UE) | Palier gratuit, RLS native |
 | Estimation de pose | MediaPipe Pose Landmarker « lite » (WebAssembly, GPU) | Tourne dans le navigateur, aucune image envoyée |
 | Validation | Zod | Mêmes schémas côté formulaire et côté serveur |
+| Rédaction des retours | API Claude (`@anthropic-ai/sdk`), Claude Haiku 5.5 par défaut, sortie JSON structurée | Coût : environ 0,2 centime par athlète |
 | Tests | Vitest + PGlite | La RLS est testée dans un vrai Postgres embarqué, sans réseau |
 
 ## Démarrer en local
@@ -80,11 +86,16 @@ Prérequis : Node 24 et un compte [Supabase](https://supabase.com) gratuit.
    coller l'URL du projet et la clé publique (*publishable key*). Ne jamais y
    mettre la clé secrète.
 
-5. **Autoriser l'URL locale** : dans *Authentication > URL Configuration*,
+5. **(Facultatif) Clé API Claude** : ajouter `ANTHROPIC_API_KEY` dans
+   `.env.local` (et dans les variables d'environnement Vercel) pour des
+   recommandations rédigées par l'IA. Sans clé, l'app utilise le mode
+   démonstration. `ANTHROPIC_MODEL` permet de changer de modèle.
+
+6. **Autoriser l'URL locale** : dans *Authentication > URL Configuration*,
    mettre `http://localhost:3000` en *Site URL* et ajouter
    `http://localhost:3000/**` aux *Redirect URLs*.
 
-6. **Lancer**
+7. **Lancer**
 
    ```bash
    npm run dev
@@ -124,6 +135,7 @@ src/
     sessions/             formulaire et badge de séance
     capture/              moteur MediaPipe, boucle en direct, replay, relecture
     metrics/              bouton d'analyse et rapport par athlète
+    insights/             bouton de rédaction et affichage des recommandations
   lib/
     auth/                 schémas Zod, Server Actions, coach courant
     roster/               groupes et athlètes : types, validation, lectures, actions
@@ -132,6 +144,8 @@ src/
                           corrections, format de fichier, squelette paramétrable
     metrics/              calcul des métriques (TypeScript pur, déterministe),
                           modules par discipline, affichage
+    insights/             recommandations : contexte pseudonymisé, consignes,
+                          schéma de sortie, contrôles, appel Claude, mode démo
     security/csp.ts       serveurs que la page a le droit de contacter
     supabase/             clients navigateur / serveur / proxy
     i18n/fr.ts            tous les textes de l'interface
@@ -171,6 +185,7 @@ migrations dans PGlite (Postgres en WebAssembly).
 |---|---|---|
 | Moteur et modèle de pose (téléchargés une fois) | cdn.jsdelivr.net, storage.googleapis.com | Rien n'est envoyé, on télécharge |
 | Séries de pose des athlètes désignés | Supabase (UE), bucket privé | Points articulaires compressés |
+| Métriques pseudonymisées (depuis le serveur, si une clé API est configurée) | API Claude (Anthropic) | Valeurs formatées, niveau, discipline, « adulte / mineur » : ni prénom, ni date de naissance, ni identifiant |
 | Vidéo | **Nulle part** | Elle reste dans le navigateur |
 
 MediaPipe envoie par défaut des statistiques d'usage à Google
@@ -240,6 +255,30 @@ soit face à la caméra, de trois quarts ou de profil.
 on mesure la flexion du tronc à la place) et l'hyperextension de l'épaule (pas
 de repère fiable en 2D).
 
+## Recommandations
+
+Le modèle **rédige**, il ne calcule rien : il reçoit des valeurs déjà
+formatées (« ≈ 128° ») avec leur fiabilité (`src/lib/insights/context.ts`).
+
+Garde-fous, du plus fort au plus souple :
+
+1. **Schéma construit par athlète** (`schema.ts`) : les métriques citables
+   forment une énumération de ses seules mesures fiables. Avec la sortie
+   structurée de l'API, le modèle ne peut pas citer une métrique absente ; la
+   réponse est revalidée côté serveur avec le même schéma Zod.
+2. **Mesures peu fiables** (fiabilité sous 0,4) : jamais envoyées avec leur
+   valeur, seulement leur nom, pour que le modèle dise qu'elles manquent.
+3. **Contrôles métier** (`validate.ts`) : toute mesure « à confirmer » citée
+   doit être déclarée comme telle ; alertes seulement sur les mesures
+   signalées ; pas de vocabulaire médical (diagnostic, pathologie, nom de
+   blessure) ; pas de note chiffrée ni de jugement dévalorisant.
+4. Réponse refusée : une seconde tentative avec la liste des problèmes, puis
+   abandon (rien n'est enregistré).
+5. À l'écran, chaque conseil liste les métriques qui le justifient et la
+   mention « à relire par le coach » accompagne toujours le texte.
+
+Retirer un consentement efface aussi les recommandations déjà rédigées.
+
 On garde 25 des 33 points de MediaPipe : les yeux et la bouche sont retirés,
 le nez et les oreilles suffisent pour situer la tête. Le format de fichier est
 décrit en tête de `src/lib/pose/codec.ts`.
@@ -250,7 +289,7 @@ décrit en tête de `src/lib/pose/codec.ts`.
 - [x] **2. Groupes et athlètes** avec consentements et effacement
 - [x] **3. Capture caméra**, pose en direct, assignation manuelle, replay
 - [x] **4. Pipeline de métriques** déterministe, testé avec des fixtures à angle connu
-- [ ] 5. Recommandations via l'API Claude
+- [x] **5. Recommandations via l'API Claude** : sortie JSON validée, citations des métriques, mode démo
 - [ ] 6. Tableaux de bord athlète et groupe
 - [ ] 7. Mode démo et finitions
 - [ ] 8. Documentation, schéma d'architecture, vidéo de démo
@@ -279,5 +318,8 @@ décrit en tête de `src/lib/pose/codec.ts`.
   sont pas calculées et l'app l'indique.
 - Retirer un consentement efface les résultats d'analyse ; les séries de
   mouvement restent jusqu'à « Effacer toutes les données ».
+- Recommandations : testées avec un faux client (tous les cas, sans clé) et
+  en mode démonstration dans le navigateur ; la qualité rédactionnelle réelle
+  de Claude sur ces consignes reste à évaluer avec une clé API.
 - Performances mesurées pour l'instant sur ordinateur (Chrome, 44 à 60 images
   analysées par seconde). Pas encore mesurées sur téléphone.

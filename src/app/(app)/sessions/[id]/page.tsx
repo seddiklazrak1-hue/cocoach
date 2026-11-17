@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ClipViewer } from "@/components/capture/clip-viewer";
+import { GenerateInsightsButton } from "@/components/insights/generate-button";
+import { InsightReport } from "@/components/insights/insight-report";
 import { AnalyzeButton } from "@/components/metrics/analyze-button";
 import { MetricsReport } from "@/components/metrics/metrics-report";
 import { PageHeader } from "@/components/page-header";
@@ -20,6 +22,10 @@ import { getSession, listClips } from "@/lib/sessions/queries";
 const t = fr.sessions;
 
 export const metadata: Metadata = { title: t.title };
+
+// La rédaction des recommandations (un appel au modèle par athlète) peut prendre
+// plusieurs dizaines de secondes.
+export const maxDuration = 60;
 
 export default async function SessionPage({ params }: PageProps<"/sessions/[id]">) {
   const { id } = await params;
@@ -152,18 +158,29 @@ export default async function SessionPage({ params }: PageProps<"/sessions/[id]"
             <h2 className="font-heading text-lg font-semibold">{fr.metrics.title}</h2>
             <p className="text-sm text-muted-foreground">{fr.metrics.subtitle}</p>
           </div>
-          <AnalyzeButton sessionId={session.id} analyzed={results.analyses.length > 0} />
+          <div className="flex flex-wrap items-start gap-3">
+            <AnalyzeButton sessionId={session.id} analyzed={results.analyses.length > 0} />
+            {results.analyses.length > 0 && (
+              <GenerateInsightsButton sessionId={session.id} hasInsights={results.insights.length > 0} />
+            )}
+          </div>
           {results.analyses.length === 0 ? (
             <p className="text-sm text-muted-foreground">{fr.metrics.notAnalyzed}</p>
           ) : (
-            results.analyses.map((analysis) => (
-              <MetricsReport
-                key={analysis.athlete_id}
-                name={nameOf.get(analysis.athlete_id) ?? "?"}
-                analysis={analysis}
-                metrics={results.metrics.filter((m) => m.athlete_id === analysis.athlete_id)}
-              />
-            ))
+            results.analyses.map((analysis) => {
+              const athleteMetrics = results.metrics.filter((m) => m.athlete_id === analysis.athlete_id);
+              const insight = results.insights.find((row) => row.athlete_id === analysis.athlete_id);
+              return (
+                <div key={analysis.athlete_id} className="flex flex-col gap-3">
+                  <MetricsReport
+                    name={nameOf.get(analysis.athlete_id) ?? "?"}
+                    analysis={analysis}
+                    metrics={athleteMetrics}
+                  />
+                  {insight && <InsightReport insight={insight.content} metrics={athleteMetrics} />}
+                </div>
+              );
+            })
           )}
         </section>
       )}

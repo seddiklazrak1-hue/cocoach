@@ -114,6 +114,7 @@ export async function analyzeSession(sessionId: string): Promise<AnalyzeState> {
 
   if (skipped.length > 0) {
     await supabase.from("metrics").delete().eq("session_id", sessionId).in("athlete_id", skipped);
+    await supabase.from("insights").delete().eq("session_id", sessionId).in("athlete_id", skipped);
     await supabase
       .from("session_athletes")
       .update({ analysis: null, analyzed_at: null })
