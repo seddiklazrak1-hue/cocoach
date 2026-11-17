@@ -102,6 +102,30 @@ export async function deleteGroup(
     return { error: e.confirmMismatch };
   }
 
+  // Les séances du groupe partent en cascade, mais leurs fichiers de pose sont
+  // dans le stockage : on les retire d'abord, sinon ils resteraient orphelins.
+  const { data: sessions, error: sessionsError } = await supabase
+    .from("sessions")
+    .select("id")
+    .eq("group_id", groupId);
+  if (sessionsError) return { error: e.generic };
+  if (sessions.length > 0) {
+    const { data: series, error: seriesError } = await supabase
+      .from("pose_series")
+      .select("storage_path")
+      .in(
+        "session_id",
+        sessions.map((session) => session.id),
+      );
+    if (seriesError) return { error: e.generic };
+    if (series.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from(POSE_BUCKET)
+        .remove(series.map((row) => row.storage_path));
+      if (storageError) return { error: e.generic };
+    }
+  }
+
   const { error } = await supabase.from("groups").delete().eq("id", groupId);
   if (error) return { error: e.generic };
 

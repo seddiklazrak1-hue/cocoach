@@ -37,7 +37,7 @@ export default async function DashboardPage() {
   const tiles = [
     { label: t.groups, value: groups, href: "/groups" },
     { label: t.athletes, value: athletes, href: "/athletes" },
-    { label: t.sessions, value: sessions, href: null },
+    { label: t.sessions, value: sessions, href: "/sessions" },
   ];
 
   return (

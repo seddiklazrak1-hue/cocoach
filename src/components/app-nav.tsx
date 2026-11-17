@@ -9,6 +9,7 @@ const LINKS = [
   { href: HOME_PATH, label: fr.nav.dashboard },
   { href: "/groups", label: fr.nav.groups },
   { href: "/athletes", label: fr.nav.athletes },
+  { href: "/sessions", label: fr.nav.sessions },
 ] as const;
 
 /** Navigation principale du coach, avec la section courante mise en avant. */
