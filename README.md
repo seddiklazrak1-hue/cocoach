@@ -8,8 +8,8 @@ navigateur**, puis produit des retours individuels (technique, physique,
 prévention) et une vue d'ensemble du groupe. **Aucune vidéo n'est stockée** :
 seules des séries de points articulaires quittent l'appareil.
 
-**État du projet : phase 5 sur 8 terminée** (recommandations rédigées par l'IA). Voir la
-[feuille de route](#feuille-de-route).
+**État du projet : les 8 phases de code sont terminées.** Reste la vidéo de démo
+(voir la [feuille de route](#feuille-de-route)).
 
 > Combat Coach IA n'est pas un dispositif médical. Les analyses sont des
 > estimations issues du mouvement ; elles ne remplacent ni le jugement du coach
@@ -129,8 +129,42 @@ d'installation sur la page de connexion.
 | `npm run lint` | ESLint |
 | `npm run check` | Lint + types + tests (à lancer avant un commit) |
 | `npm run build` | Build de production |
+| `npm run e2e` | Tests de bout en bout (Playwright, Chromium ; `npx playwright install chromium` la première fois) |
 
 ## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Navigateur["Téléphone / ordinateur du coach"]
+    CAM["Caméra ou fichier vidéo"] --> MP["MediaPipe Pose<br/>(dans le navigateur)"]
+    MP --> TRK["Suivi et assignation<br/>par le coach"]
+    TRK --> REC["Séries de points<br/>10 Hz, compressées"]
+    UI["Interface Next.js<br/>graphiques Recharts"]
+  end
+  subgraph Serveur["Next.js (serveur)"]
+    ACT["Server Actions<br/>vérifient la session"]
+    MET["Métriques<br/>TypeScript déterministe"]
+    INS["Recommandations<br/>contrôles + mode démo"]
+  end
+  subgraph Supabase["Supabase (UE)"]
+    DB[("Postgres + RLS<br/>coach_id = auth.uid()")]
+    ST[("Storage privé<br/>séries de points")]
+  end
+  CLAUDE["API Claude<br/>(métriques pseudonymisées)"]
+
+  REC -- "une série par athlète" --> ST
+  ACT --> DB
+  ACT --> ST
+  ACT --> MET --> DB
+  ACT --> INS --> DB
+  INS -. "uniquement si une clé API est configurée" .-> CLAUDE
+  UI --> ACT
+```
+
+La vidéo ne sort jamais du navigateur. Le serveur ne voit que des séries de
+points, puis des métriques et des textes pseudonymisés.
+
+Arborescence :
 
 ```
 src/
@@ -167,6 +201,8 @@ src/
   proxy.ts                rafraîchit la session et redirige (ex-middleware)
 supabase/migrations/      schéma SQL et politiques RLS
 tests/db/                 tests de sécurité de la base
+e2e/                      tests de bout en bout (Playwright)
+docs/                     pitch, posts et affiche pour la salle
 ```
 
 ### Sécurité des données
@@ -306,7 +342,8 @@ décrit en tête de `src/lib/pose/codec.ts`.
 - [x] **5. Recommandations via l'API Claude** : sortie JSON validée, citations des métriques, mode démo
 - [x] 6. Tableaux de bord athlète et groupe : progression par mesure, suivi de groupe
 - [x] 7. Mode démo : données fictives générées par le vrai pipeline, effaçables d'un clic
-- [ ] 8. Documentation, schéma d'architecture, vidéo de démo
+- [x] 8. Documentation, schéma d'architecture, tests de bout en bout, pitch et affiche
+- [ ] Vidéo de démo et GIF (à enregistrer sur un vrai téléphone)
 
 ## Limites connues
 

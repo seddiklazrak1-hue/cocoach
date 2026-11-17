@@ -43,3 +43,7 @@ next-env.d.ts
 
 # outils locaux
 .claude/
+
+# Playwright
+/test-results/
+/playwright-report/
