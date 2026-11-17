@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DemoControls } from "@/components/demo/demo-controls";
 import { buttonVariants } from "@/components/ui/button";
+import { isDemoLoaded } from "@/lib/demo/queries";
 import { requireCoach } from "@/lib/auth/current-coach";
 import { fr } from "@/lib/i18n/fr";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: fr.nav.dashboard };
+
+// Le chargement de la démo crée des analyses sur le serveur : laisse le temps nécessaire.
+export const maxDuration = 60;
 
 const t = fr.dashboard;
 
@@ -33,6 +38,7 @@ export default async function DashboardPage() {
     countRows(supabase, "athletes", true),
   ]);
   const dbUnreachable = [groups, athletes, sessions].some((n) => n === null);
+  const demoLoaded = await isDemoLoaded();
 
   const tiles = [
     { label: t.groups, value: groups, href: "/groups" },
@@ -120,6 +126,8 @@ export default async function DashboardPage() {
           </Link>
         </div>
       )}
+
+      <DemoControls loaded={demoLoaded} />
     </div>
   );
 }

@@ -3,11 +3,12 @@
 
 import type { MetricKey, MetricUnit } from "./types";
 
+// Un écart quasi nul ne doit pas s'afficher « -0 » : on arrondit d'abord.
 const number = (value: number, digits: number) =>
   new Intl.NumberFormat("fr-FR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: digits,
-  }).format(value);
+  }).format(Number(value.toFixed(digits)) || 0);
 
 /** Valeur seule, sans « ≈ » (utile pour les détails gauche/droite). */
 export function formatValue(key: MetricKey, unit: MetricUnit, value: number): string {

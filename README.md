@@ -52,6 +52,11 @@ seules des séries de points articulaires quittent l'appareil.
   un tableau texte équivalent. Seules les mesures de fiabilité ≥ 0,4 sont
   affichées. Le bilan donne l'écart entre première et dernière mesure, sans
   dire si c'est « mieux » : selon la mesure, plus haut peut être moins bien.
+- Mode démo (tableau de bord, bouton « Charger la démo ») : trois groupes
+  fictifs, douze athlètes (dont un mineur avec accord parental), neuf séances.
+  Les squelettes sont synthétiques, mais les métriques passent par le même
+  pipeline que les vraies séances. Tout porte le préfixe « Démo · » : c'est
+  lui qui sert à effacer, donc évite de nommer une vraie fiche ainsi.
 - Suivi de groupe (`/groups/[id]/suivi`) : liste des séances (athlètes
   analysés, signaux à surveiller) et moyenne par séance, calculée seulement sur
   les mesures fiables (≥ 0,7). Aucun texte généré : c'est du calcul pur.
@@ -300,7 +305,7 @@ décrit en tête de `src/lib/pose/codec.ts`.
 - [x] **4. Pipeline de métriques** déterministe, testé avec des fixtures à angle connu
 - [x] **5. Recommandations via l'API Claude** : sortie JSON validée, citations des métriques, mode démo
 - [x] 6. Tableaux de bord athlète et groupe : progression par mesure, suivi de groupe
-- [ ] 7. Mode démo et finitions
+- [x] 7. Mode démo : données fictives générées par le vrai pipeline, effaçables d'un clic
 - [ ] 8. Documentation, schéma d'architecture, vidéo de démo
 
 ## Limites connues

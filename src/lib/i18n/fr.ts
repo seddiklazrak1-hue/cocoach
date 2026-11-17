@@ -78,6 +78,22 @@ export const fr = {
     athletes: "Athlètes",
     sessions: "Séances",
   },
+  demo: {
+    title: "Données de démonstration",
+    intro:
+      "Ajoute trois groupes fictifs (boxe, MMA, lutte), douze athlètes et neuf séances analysées, pour découvrir l'app sans filmer. Tout est marqué « Démo » : tes vraies fiches ne sont pas touchées.",
+    loadedBadge: "Démo chargée",
+    load: "Charger la démo",
+    clear: "Effacer la démo",
+    clearConfirm:
+      "Effacer toutes les données de démonstration ? Tes vraies données ne sont pas touchées.",
+    loaded: (groups: number, athletes: number, sessions: number) =>
+      `Démo chargée : ${groups} groupes, ${athletes} athlètes, ${sessions} séances.`,
+    cleared: "Données de démonstration effacées.",
+    alreadyLoaded: "La démo est déjà chargée. Efface-la avant de la recharger.",
+    notLoaded: "Aucune donnée de démonstration à effacer.",
+    error: "Opération impossible. Réessaie.",
+  },
   dashboard: {
     greeting: (name: string) => (name ? `Bonjour ${name}` : "Bonjour coach"),
     subtitle: "Voici l'état de ton espace.",
