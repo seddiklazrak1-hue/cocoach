@@ -14,13 +14,14 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       // Le calcul des métriques et le cœur de pose doivent rester couverts à 90 % ou plus.
-      include: ["src/lib/metrics/**/*.ts", "src/lib/pose/**/*.ts", "src/lib/insights/**/*.ts"],
+      include: ["src/lib/metrics/**/*.ts", "src/lib/pose/**/*.ts", "src/lib/insights/**/*.ts", "src/lib/progress/**/*.ts"],
       // Les actions et lectures serveur (accès Supabase) sont vérifiées de bout en bout dans le navigateur.
       exclude: [
         "**/*.test.ts",
         "src/lib/metrics/actions.ts",
         "src/lib/metrics/queries.ts",
         "src/lib/insights/actions.ts",
+        "src/lib/progress/queries.ts",
       ],
       thresholds: { lines: 90, functions: 90, branches: 85, statements: 90 },
       reporter: ["text-summary", "text"],

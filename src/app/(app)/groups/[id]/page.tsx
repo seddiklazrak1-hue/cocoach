@@ -60,6 +60,16 @@ export default async function GroupPage({ params }: PageProps<"/groups/[id]">) {
               {fr.sessions.newForGroup}
             </Link>
             <Link
+              href={`/groups/${group.id}/suivi`}
+              className={buttonVariants({
+                variant: "outline",
+                size: "lg",
+                className: "h-11 px-5",
+              })}
+            >
+              {fr.progress.groupLink}
+            </Link>
+            <Link
               href={`/groups/${group.id}/edit`}
               className={buttonVariants({
                 variant: "outline",

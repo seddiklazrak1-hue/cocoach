@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { SeriesView, type View } from "@/components/progress/series-view";
 import { ConsentBadge } from "@/components/roster/consent-badge";
 import { ConsentForm } from "@/components/roster/consent-form";
 import { DangerZone } from "@/components/roster/danger-zone";
 import { buttonVariants } from "@/components/ui/button";
 import { fr } from "@/lib/i18n/fr";
+import { buildAthleteSeries } from "@/lib/progress/domain";
+import { getAthleteProgress } from "@/lib/progress/queries";
 import { deleteAthlete, recordConsent } from "@/lib/roster/actions";
 import { ageOn, isMinor } from "@/lib/roster/domain";
 import { formatDate, formatDateTime } from "@/lib/roster/labels";
@@ -24,16 +27,22 @@ export const metadata: Metadata = { title: t.profile };
 
 export default async function AthletePage({
   params,
+  searchParams,
 }: PageProps<"/athletes/[id]">) {
   const { id } = await params;
   const athlete = await getAthlete(id);
   if (!athlete) notFound();
 
-  const [consents, groups, memberships] = await Promise.all([
+  const [consents, groups, memberships, progress, query] = await Promise.all([
     listConsents(athlete.id),
     listGroups(),
     listMemberships(),
+    getAthleteProgress(athlete.id),
+    searchParams,
   ]);
+  const views: View[] = buildAthleteSeries(progress.sessions, progress.rows);
+  const requested = typeof query.m === "string" ? views.find((view) => view.key === query.m) : undefined;
+  const selected = requested ?? views[0];
   const groupIds = new Set(
     memberships
       .filter((m) => m.athlete_id === athlete.id)
@@ -125,6 +134,28 @@ export default async function AthletePage({
             </dd>
           </div>
         </dl>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <div>
+          <h2 className="font-heading text-lg font-semibold">{fr.progress.athleteTitle}</h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            {fr.progress.athleteSubtitle}
+          </p>
+        </div>
+        {views.length === 0 ? (
+          <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+            {fr.progress.noData}
+          </p>
+        ) : (
+          <SeriesView
+            views={views}
+            selected={selected}
+            hrefFor={(key) => `/athletes/${athlete.id}?m=${key}`}
+            ariaName={athlete.display_name}
+            mode="athlete"
+          />
+        )}
       </section>
 
       <section className="flex flex-col gap-4">

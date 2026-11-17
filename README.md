@@ -48,6 +48,15 @@ seules des séries de points articulaires quittent l'appareil.
   Chaque conseil affiche les métriques qui le justifient. Sans clé API : mode
   démonstration par règles simples, signalé comme tel.
 - Tableau de bord avec compteurs et rappel des athlètes non analysables.
+- Progression d'un athlète : une courbe par mesure, au fil des séances, avec
+  un tableau texte équivalent. Seules les mesures de fiabilité ≥ 0,4 sont
+  affichées. Le bilan donne l'écart entre première et dernière mesure, sans
+  dire si c'est « mieux » : selon la mesure, plus haut peut être moins bien.
+- Suivi de groupe (`/groups/[id]/suivi`) : liste des séances (athlètes
+  analysés, signaux à surveiller) et moyenne par séance, calculée seulement sur
+  les mesures fiables (≥ 0,7). Aucun texte généré : c'est du calcul pur.
+  La synthèse rédigée par Claude pour le groupe (table `group_insights`) n'est
+  pas encore branchée.
 - CI : lint, types, tests et build à chaque push.
 
 ## Stack
@@ -290,7 +299,7 @@ décrit en tête de `src/lib/pose/codec.ts`.
 - [x] **3. Capture caméra**, pose en direct, assignation manuelle, replay
 - [x] **4. Pipeline de métriques** déterministe, testé avec des fixtures à angle connu
 - [x] **5. Recommandations via l'API Claude** : sortie JSON validée, citations des métriques, mode démo
-- [ ] 6. Tableaux de bord athlète et groupe
+- [x] 6. Tableaux de bord athlète et groupe : progression par mesure, suivi de groupe
 - [ ] 7. Mode démo et finitions
 - [ ] 8. Documentation, schéma d'architecture, vidéo de démo
 
