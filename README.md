@@ -1,19 +1,54 @@
+<div align="center">
+
 # Combat Coach IA
 
-> Un smartphone sur trépied devient l'assistant du coach de sports de combat
-> (lutte, MMA, jiu-jitsu brésilien, boxe).
+**Un smartphone sur trépied devient l'assistant du coach de sports de combat.**<br />
+Lutte · MMA · jiu-jitsu brésilien · boxe
+
+[![CI](https://github.com/seddiklazrak1-hue/cocoach/actions/workflows/ci.yml/badge.svg)](https://github.com/seddiklazrak1-hue/cocoach/actions/workflows/ci.yml)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-RLS-3FCF8E?logo=supabase&logoColor=white)
+![MediaPipe](https://img.shields.io/badge/MediaPipe-pose%20dans%20le%20navigateur-0097A7)
+![Claude API](https://img.shields.io/badge/Claude-recommandations-D97757)
+
+[Fonctionnalités](#ce-qui-fonctionne-aujourdhui) ·
+[Démarrer](#démarrer-en-local) ·
+[Architecture](#architecture) ·
+[Sécurité des données](#sécurité-des-données) ·
+[Limites](#limites-connues) ·
+[Pitch](docs/pitch.md)
+
+</div>
+
+---
+
+## En bref
 
 L'app filme la séance, extrait le squelette de chaque athlète **dans le
 navigateur**, puis produit des retours individuels (technique, physique,
-prévention) et une vue d'ensemble du groupe. **Aucune vidéo n'est stockée** :
-seules des séries de points articulaires quittent l'appareil.
+prévention) et une vue d'ensemble du groupe.
 
-**État du projet : les 8 phases de code sont terminées.** Reste la vidéo de démo
-(voir la [feuille de route](#feuille-de-route)).
+| | |
+|---|---|
+| **Vie privée** | Aucune vidéo n'est stockée : seules des séries de points articulaires (environ 20 Ko pour 20 s) quittent l'appareil. |
+| **Mesures** | 25 métriques calculées par du code déterministe, chacune avec une fiabilité de 0 à 1. |
+| **Recommandations** | Claude rédige à partir des seules métriques et cite celles qui justifient chaque conseil ; il ne calcule rien. |
+| **Consentement** | Journal daté et non modifiable, accord parental imposé aux mineurs, effacement en un clic. |
+| **Sécurité** | Row Level Security Postgres : un coach ne voit que ses données, testé dans un vrai Postgres embarqué. |
+| **Qualité** | 180 tests unitaires et base de données, 4 tests de bout en bout, CI à chaque push. |
 
+> **Essayer sans filmer** : une fois connecté, le bouton « Charger la démo » du
+> tableau de bord crée trois groupes fictifs, douze athlètes et neuf séances
+> analysées, effaçables d'un clic.
+
+> [!IMPORTANT]
 > Combat Coach IA n'est pas un dispositif médical. Les analyses sont des
 > estimations issues du mouvement ; elles ne remplacent ni le jugement du coach
 > ni l'avis d'un professionnel de santé.
+
+**État du projet : les 8 phases de code sont terminées.** Reste la vidéo de démo
+(voir la [feuille de route](#feuille-de-route)).
 
 ## Ce qui fonctionne aujourd'hui
 
